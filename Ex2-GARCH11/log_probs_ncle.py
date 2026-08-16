@@ -6,16 +6,17 @@ import time
 import torch
 
 # Simulator
-def simulator(theta, T):
-    sigma_sq = np.zeros(T, dtype=np.float32) # initialise
-    sigma_sq[0] = theta[1]/(1-theta[2]-theta[3]) # set initial value of sigma squared to be ω/(1-α-β) (provided that α+β<1)
-    epsilon = np.zeros(T, dtype=np.float32) # initialise
-    epsilon[0] = np.random.normal(theta[0], np.sqrt(sigma_sq[0])) # simulate initial epsilon
-    # Simulate GARCH(1,1) process
-    for t in range(1, T):
+def simulator(theta, T, burn_in=500):
+    T_total = T + burn_in
+    sigma_sq = np.zeros(T_total, dtype=np.float32)
+    sigma_sq[0] = theta[1]/(1-theta[2]-theta[3])
+    epsilon = np.zeros(T_total, dtype=np.float32)
+    epsilon[0] = np.random.normal(theta[0], np.sqrt(sigma_sq[0]))
+    for t in range(1, T_total):
         sigma_sq[t] = theta[1] + theta[2]*(epsilon[t-1]-theta[0])**2 + theta[3]*sigma_sq[t-1]
         epsilon[t] = np.random.normal(theta[0], np.sqrt(sigma_sq[t]))
-    return epsilon
+    return epsilon[burn_in:]
+    
 
 # True parameter values
 mu_0, omega_0, alpha_0, beta_0 = 0.5, 0.1, 0.1, 0.8
