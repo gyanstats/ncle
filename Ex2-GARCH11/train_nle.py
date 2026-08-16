@@ -60,21 +60,22 @@ def unpack_reparam(thetas):
     return mu, omega, alpha, beta
 
 
-def simulator_N(thetas, T, num_sims):
+def simulator_N(thetas, T, num_sims, burn_in=500):
     mu, omega, alpha, beta = unpack_reparam(thetas)
     sigma2_uncond = thetas[:, 1]  # grab directly for initialisation
 
-    x        = torch.zeros(num_sims, T)
-    sigma_sq = torch.zeros(num_sims, T)
+    T_total = T + burn_in
+    x        = torch.zeros(num_sims, T_total)
+    sigma_sq = torch.zeros(num_sims, T_total)
 
     sigma_sq[:, 0] = sigma2_uncond
     x[:, 0]        = torch.normal(mu, torch.sqrt(sigma_sq[:, 0]))
 
-    for t in range(1, T):
+    for t in range(1, T_total):
         sigma_sq[:, t] = omega + alpha * (x[:, t-1] - mu)**2 + beta * sigma_sq[:, t-1]
         x[:, t]        = torch.normal(mu, torch.sqrt(sigma_sq[:, t]))
 
-    return x
+    return x[:, burn_in:]
 
 # Infer theta
 if __name__ == '__main__':
