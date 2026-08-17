@@ -120,6 +120,8 @@ if train_multiple:
     filename = f'results_ncle/npe_N{N_string(num_sims)}/train_l{batch_len}_{task_id}.pkl'
 else:
     filename = f'results_ncle/npe_N{N_string(num_sims)}/train_l{batch_len}.pkl'
+
+os.makedirs(os.path.dirname(filename), exist_ok=True)
 with open(filename, 'wb') as f:
     pickle.dump(training_results, f)
     
