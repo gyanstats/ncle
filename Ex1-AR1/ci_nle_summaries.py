@@ -188,9 +188,6 @@ def calculate_G_ncl(mcle, num_batches, n):
     
 # Calculate CI
 def calculate_ci_ncl(signif_level, num_batches, n):
-
-    ''' Simulate observed data then use that to get mcle '''
-    x_0 = simulator(phi=phi_0, T=T) # simulate x_0 (not seeded)
     
     ci_start = time.time()
     # Calculate mcle given x_0
