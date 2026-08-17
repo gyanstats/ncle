@@ -45,7 +45,7 @@ batches_mat = np.vstack(np.array_split(x_0, num_batches)) # shape: (num_batches,
 
 param_list = ['mu', 'omega', 'alpha', 'beta']
 
-with open(f'results_ncle/nle_{num_sims}/train_l{l}.pkl', 'rb') as f:
+with open(f'results_ncle/nle_N{N_string(num_sims)}/train_l{l}.pkl', 'rb') as f:
     nle_batches = pickle.load(f)
 likelihood_estimator = nle_batches['likelihood estimator']
     
@@ -93,7 +93,7 @@ for p in param_list:
 times_dict['total'] = time.time() - start
 print(f'Total time: {times_dict["total"]}')
 
-with open(f'results_ncle/nle_N{num_sims}/log_probs_T{N_string(T)}_l{l}.pkl', 'wb') as f:
+with open(f'results_ncle/nle_N{N_string(num_sims)}/log_probs_T{N_string(T)}_l{l}.pkl', 'wb') as f:
     pickle.dump({'log_probs': log_probs_list_ncl, 'times': times_dict}, f)
                                          
 
