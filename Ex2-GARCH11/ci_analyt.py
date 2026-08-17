@@ -301,6 +301,7 @@ if __name__ == '__main__':
         filename = f'results_ncle/analyt/ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
     else:
         filename = f'results_ncle/analyt/ci_T{N_string(T)}_l{batch_len}.pkl'
-        
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
         pickle.dump(ci, f)
