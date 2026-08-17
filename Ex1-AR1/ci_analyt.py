@@ -7,14 +7,20 @@ import time
 import pickle
 import sys
 
-mp.set_start_method('spawn', force=True)
+COVERAGE_MODE = False
 
 # Parameters
-T = 1000 # Sequence length
+T = int(sys.argv[1]) # Sequence length
 phi_0 = 0.8 # True value
 
-num_batches = int(sys.argv[1]) # adjusts automatically
-batch_len = int(T / num_batches)  # batch length
+batch_len = int(sys.argv[2]) # Batch length
+num_batches = int( T/batch_len ) # Number of batches
+
+# For pickling
+def N_string(N):
+	if N >= 1_000_000: return f'{N//1_000_000}m'
+	if N >= 1_000:     return f'{N//1_000}k'
+	return str(N)
 
 torch.set_num_threads(1)  # Keep this to avoid oversubscription
 max_workers = 4 # adjust based on SLURM cpus-per-task
@@ -22,25 +28,18 @@ max_epochs = 4000
 n = 100 # number of summands in S and V calculations
 signif_level = 0.95
 
-def simulator(phi: torch.Tensor, T: int) -> torch.Tensor:
-    """
-    Simulate AR(1) process using torch only.
-    Args:
-        phi (torch.Tensor): shape (1,)
-        T (int): time series length
+# Simulator
+def simulator(phi, T):
+    # Convert phi to float if a Tensor is passed in
+    if isinstance(phi, torch.Tensor):
+        phi = phi.detach().item()
 
-    Returns:
-        torch.Tensor: shape (T,)
-    """
-    x = torch.empty(T)
-    eps = torch.randn(T)
-    x[0] = eps[0] * torch.sqrt(torch.tensor(1.0) / (1 - phi**2))
-
+    X = np.zeros(T, dtype=np.float32)
+    X[0] = np.random.normal(0, scale=np.sqrt(1 / (1 - phi**2)))
     for t in range(1, T):
-        x[t] = phi*x[t-1] + eps[t]
+        X[t] = phi * X[t - 1] + np.random.normal(0, 1)
 
-    return x
-
+    return torch.from_numpy(X)  # Returns torch.float32 tensor
 
 def ar1_log_lik(x: torch.Tensor, phi: torch.Tensor) -> torch.Tensor:
     T = x.shape[0]
@@ -189,9 +188,6 @@ def calculate_G_cl(mcle, num_batches, n):
 # Calculate CI
 def calculate_ci_cl(signif_level, num_batches, n):
 
-    ''' Simulate observed data then use that to get mcle '''
-    x_0 = simulator(phi=phi_0, T=T) # simulate x_0 (not seeded)
-
     ci_start = time.time()
     # Calculate mcle given x_0
     print(f"Starting training loop...", flush=True)
@@ -230,17 +226,25 @@ def calculate_ci_cl(signif_level, num_batches, n):
     
 # Wrap the main execution code with this guard
 if __name__ == '__main__':
-    # Get SLURM task ID (will be 0-199)
-    task_id = int(os.environ.get('SLURM_ARRAY_TASK_ID', '0'))
+    mp.set_start_method('spawn', force=True)
 
-    # Use task_id for unique random seeding
-    np.random.seed(task_id + int(time.time() * 1000) % 1000)
-    torch.manual_seed(task_id + int(time.time() * 1000) % 1000)
+	# Generate observed dataset x_0
+    if COVERAGE_MODE:
+        x_0 = simulator(phi=phi_0, T=T)
+    else:
+        np.random.seed(0)
+        x_0 = simulator(phi=phi_0, T=T)
 
     # Calculate a CI
     ci = calculate_ci_cl(signif_level, num_batches, n)
 
     # Save results with unique filenames
-    filename = f'ci_{num_batches}_task{task_id}.pkl'
+    if COVERAGE_MODE:
+        task_id = int(os.environ.get('SLURM_ARRAY_TASK_ID', '0'))
+        filename = f'results_ncle/analyt/ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
+    else:
+        filename = f'results_ncle/analyt/ci_T{N_string(T)}_l{batch_len}.pkl'
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
         pickle.dump(ci, f)
