@@ -6,7 +6,12 @@ import time
 import torch
 import sys
 
-
+# For pickling at the end of the script
+def N_string(N):
+    if N >= 1_000_000: return f'{N//1_000_000}m'
+    if N >= 1_000:     return f'{N//1_000}k'
+    return str(N)
+    
 # Simulator
 def simulator(theta, T, burn_in=500):
     T_total = T + burn_in
@@ -90,7 +95,7 @@ for p in param_list:
 times_dict['total'] = time.time() - start
 print(f'Total time: {times_dict["total"]}')
 
-with open(f'log_probs_cl_l{l}.pkl', 'wb') as f:
+with open(f'results_ncle/analyt/log_probs_T{N_string(T)}_l{l}.pkl', 'wb') as f:
     pickle.dump({'log_probs': log_probs_list_cl, 'times': times_dict}, f)
                                          
 
