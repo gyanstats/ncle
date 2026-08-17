@@ -8,18 +8,19 @@ import time
 import pickle
 import sys
 
-COVERAGE_MODE = True
+COVERAGE_MODE = False
 
 # Parameters
 T = int(sys.argv[1])
 mu_0, omega_0, alpha_0, beta_0 = 0.5, 0.1, 0.1, 0.8 # true parameter values
 theta_0 = np.array([mu_0, omega_0, alpha_0, beta_0], dtype=np.float32)
 
-batch_len = int(sys.argv[2])
+num_sims = int(sys.argv[2])
+batch_len = int(sys.argv[3])
 num_batches = int(T / batch_len)
 
 # Load the required batch
-with open(f'train_l{batch_len}_1.pkl', 'rb') as f:
+with open(f'results_ncle/nle_{num_sims}/train_l{batch_len}.pkl', 'rb') as f:
     nle_batches = pickle.load(f)
 
 # Extract likelihood estimator for the specific batch size
@@ -230,9 +231,9 @@ if __name__ == '__main__':
     # Save results with unique filenames
     if COVERAGE_MODE:
         task_id = int(os.environ.get('SLURM_ARRAY_TASK_ID', '0'))
-        filename = f'ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
+        filename = f'results_ncle/nle_{num_sims}/ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
     else:
-        filename = f'ci_T{N_string(T)}_l{batch_len}.pkl'
+        filename = f'results_ncle/nle_{num_sims}/ci_T{N_string(T)}_l{batch_len}.pkl'
         
     with open(filename, 'wb') as f:
         pickle.dump(ci, f)
