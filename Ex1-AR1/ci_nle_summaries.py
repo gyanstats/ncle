@@ -25,7 +25,7 @@ def N_string(N):
 	return str(N)
     
 # Load the required batch
-with open(f'results_ncle/nle_N{N_string(num_sims)}/train_l{batch_len}.pkl', 'rb') as f:
+with open(f'results_ncle/nle_summaries_N{N_string(num_sims)}/train_l{batch_len}.pkl', 'rb') as f:
     nle_batches = pickle.load(f)
 
 # Extract likelihood estimator for the specific batch size
