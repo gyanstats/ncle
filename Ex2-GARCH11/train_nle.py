@@ -10,7 +10,7 @@ import torch
 from torch.distributions.uniform import Uniform
 import torch.distributions as dist
 
-train_multiple = True
+train_multiple = False
 
 # Parameters
 num_sims = int(sys.argv[1]) # Number of training simulations
@@ -109,8 +109,10 @@ if __name__ == '__main__':
     # Save results to a file
     if train_multiple:
         task_id = os.environ.get('SLURM_ARRAY_TASK_ID', '0')
-        filename = f'train_l{batch_len}_{task_id}.pkl'
+        filename = f'results_ncle/nle_{num_sims}/train_l{batch_len}_{task_id}.pkl'
     else:
-        filename = f'train_l{batch_len}.pkl'
+        filename = f'results_ncle/nle_{num_sims}/train_l{batch_len}.pkl'
+        
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
         pickle.dump(training_results, f)
