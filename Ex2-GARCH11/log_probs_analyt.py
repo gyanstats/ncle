@@ -95,6 +95,7 @@ for p in param_list:
 times_dict['total'] = time.time() - start
 print(f'Total time: {times_dict["total"]}')
 
+os.makedirs(os.path.dirname(filename), exist_ok=True)
 with open(f'results_ncle/analyt/log_probs_T{N_string(T)}_l{l}.pkl', 'wb') as f:
     pickle.dump({'log_probs': log_probs_list_cl, 'times': times_dict}, f)
                                          
