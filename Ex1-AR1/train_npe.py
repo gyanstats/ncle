@@ -7,13 +7,15 @@ import pickle
 import sys
 import os
 
+train_multiple = False
+
 # Parameters
-T = 1000 # Sequence length
+T = int(sys.argv[1]) # Sequence length
 phi_0 = torch.tensor([0.8]) # True value
 
-num_batches = int(sys.argv[1]) # adjusts automatically
-batch_len = int( T/num_batches ) # Batch length
-num_sims = 100_000 # Number of training simulations
+num_sims = int(sys.argv[2]) # Number of training simulations
+batch_len = int(sys.argv[3]) # Batch length
+num_batches = int( T/batch_len ) # Number of batches
 
 # Prior
 dim = 1
@@ -33,6 +35,12 @@ def simulator(phi, T):
 np.random.seed(0)
 x_0 = simulator(phi=phi_0, T=T)
 x_0 = np.float32(x_0)
+
+# For pickling at the end of the script
+def N_string(N):
+    if N >= 1_000_000: return f'{N//1_000_000}m'
+    if N >= 1_000:     return f'{N//1_000}k'
+    return str(N)
 
 # Set up sequence of phis for plotting later
 n_ = 1000
@@ -107,7 +115,11 @@ def ncle_train(num_batches, batch_len, num_sims):
 training_results = ncle_train(num_batches, batch_len, num_sims)
 
 # Save results to a file
-filename = f'ar1_{num_batches}batch.pkl'
+if train_multiple:
+    task_id = os.environ.get('SLURM_ARRAY_TASK_ID', '0')
+    filename = f'results_ncle/npe_N{N_string(num_sims)}/train_l{batch_len}_{task_id}.pkl'
+else:
+    filename = f'results_ncle/npe_N{N_string(num_sims)}/train_l{batch_len}.pkl'
 with open(filename, 'wb') as f:
     pickle.dump(training_results, f)
     
