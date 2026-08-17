@@ -12,7 +12,7 @@ We have included code for reproducing the two examples - AR(1) and GARCH(1,1) ti
 
 ## Setup
 
-Versions of all packages used are listed in `package_versions.txt`, corresponding to the environment used for the original computations. For compatibility with the other packages, we recommend using NumPy version 1.26.4.
+For compatibility between packages, we recommend using `NumPy` version 1.26.4 and `sbi` version 0.22.0 or older.
 
 ## Usage
 
