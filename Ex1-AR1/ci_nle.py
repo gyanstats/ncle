@@ -7,21 +7,28 @@ import time
 import pickle
 import sys
 
-mp.set_start_method('spawn', force=True)
+COVERAGE_MODE = False
 
 # Parameters
-T = 1000 # Sequence length
+T = int(sys.argv[1]) # Sequence length
 phi_0 = 0.8 # True value
 
-num_batches = int(sys.argv[1]) # adjusts automatically
+num_sims = int(sys.argv[2]) # Number of training simulations
+batch_len = int(sys.argv[3]) # Batch length
+num_batches = int( T/batch_len ) # Number of batches
 
+# For pickling
+def N_string(N):
+	if N >= 1_000_000: return f'{N//1_000_000}m'
+	if N >= 1_000:     return f'{N//1_000}k'
+	return str(N)
+    
 # Load the required batch
-with open(f'ar1_{num_batches}batch_0.pkl', 'rb') as f:
+with open(f'results_ncle/nle_N{N_string(num_sims)}/train_l{batch_len}.pkl', 'rb') as f:
     nle_batches = pickle.load(f)
 
 # Extract likelihood estimator for the specific batch size
 likelihood_estimator = nle_batches['likelihood estimator']
-batch_len = int(T / num_batches)  # batch length
 
 torch.set_num_threads(1)  # Keep this to avoid oversubscription
 max_workers = 4 # adjust based on SLURM cpus-per-task
@@ -205,17 +212,16 @@ def calculate_ci_ncl(signif_level, num_batches, n):
 
 # Wrap the main execution code with this guard
 if __name__ == '__main__':
-    # Get SLURM task ID (will be 0-199)
-    task_id = int(os.environ.get('SLURM_ARRAY_TASK_ID', '0'))
-
-    # Use task_id for unique random seeding
-    np.random.seed(task_id + int(time.time() * 1000) % 1000)
-    torch.manual_seed(task_id + int(time.time() * 1000) % 1000)
-
+    mp.set_start_method('spawn', force=True)
+    
     # Calculate a CI
     ci = calculate_ci_ncl(signif_level, num_batches, n)
 
     # Save results with unique filenames
-    filename = f'ci_{num_batches}_task{task_id}.pkl'
+    if COVERAGE_MODE:
+        task_id = int(os.environ.get('SLURM_ARRAY_TASK_ID', '0'))
+        filename = f'results_ncle/nle_N{N_string(num_sims)}/ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
+    else:
+        filename = f'results_ncle/nle_N{N_string(num_sims)}/ci_T{N_string(T)}_l{batch_len}.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(ci, f)
