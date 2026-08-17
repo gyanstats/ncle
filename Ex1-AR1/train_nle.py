@@ -30,12 +30,17 @@ def simulator(phi, T):
         X[t] = phi * X[t-1] + np.random.normal(0, 1)
     return X
     
-    
 # x_0
 np.random.seed(0)
 x_0 = simulator(phi=phi_0, T=T)
 x_0 = np.float32(x_0)
 
+# For pickling at the end of the script
+def N_string(N):
+    if N >= 1_000_000: return f'{N//1_000_000}m'
+    if N >= 1_000:     return f'{N//1_000}k'
+    return str(N)
+    
 # Set up sequence of phis for plotting later
 n_ = 1000
 phi_seq = np.linspace(-1, 1, n_+2)[1:-1]
@@ -113,9 +118,9 @@ training_results = ncle_train(num_batches, batch_len, num_sims)
 # Save results to a file
 if train_multiple:
     task_id = os.environ.get('SLURM_ARRAY_TASK_ID', '0')
-    filename = f'results_ncle/nle_N{num_sims}/train_l{batch_len}_{task_id}.pkl'
+    filename = f'results_ncle/nle_N{N_string(num_sims)}/train_l{batch_len}_{task_id}.pkl'
 else:
-    filename = f'results_ncle/nle_N{num_sims}/train_l{batch_len}.pkl'
+    filename = f'results_ncle/nle_N{N_string(num_sims)}/train_l{batch_len}.pkl'
 with open(filename, 'wb') as f:
     pickle.dump(training_results, f)
     
