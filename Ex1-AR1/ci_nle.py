@@ -37,25 +37,17 @@ n = 100 # number of summands in S and V calculations
 signif_level = 0.95
 
 # Simulator
-def simulator(phi: torch.Tensor, T: int) -> torch.Tensor:
-    """
-    Simulate AR(1) process using torch only.
-    Args:
-        phi (torch.Tensor): shape (1,)
-        T (int): time series length
+def simulator(phi, T):
+    # Convert phi to float if a Tensor is passed in
+    if isinstance(phi, torch.Tensor):
+        phi = phi.detach().item()
 
-    Returns:
-        torch.Tensor: shape (T,)
-    """
-    x = torch.empty(T)
-    eps = torch.randn(T)
-    x[0] = eps[0] * torch.sqrt(torch.tensor(1.0) / (1 - phi**2))
-
+    X = np.zeros(T, dtype=np.float32)
+    X[0] = np.random.normal(0, scale=np.sqrt(1 / (1 - phi**2)))
     for t in range(1, T):
-        x[t] = phi*x[t-1] + eps[t]
+        X[t] = phi * X[t - 1] + np.random.normal(0, 1)
 
-    return x
-
+    return torch.from_numpy(X)  # Returns torch.float32 tensor
 
 # Optimisation procedure for finding MCLE
 def training_loop_ncl(max_epochs, x_0, num_batches):
@@ -169,10 +161,7 @@ def calculate_G_ncl(mcle, num_batches, n):
     
 # Calculate CI
 def calculate_ci_ncl(signif_level, num_batches, n):
-
-    ''' Simulate observed data then use that to get mcle '''
-    x_0 = simulator(phi=phi_0, T=T) # simulate x_0 (not seeded)
-    
+	
     ci_start = time.time()
     # Calculate mcle given x_0
     print(f"Starting training loop on GPU...", flush=True)
@@ -213,6 +202,13 @@ def calculate_ci_ncl(signif_level, num_batches, n):
 # Wrap the main execution code with this guard
 if __name__ == '__main__':
     mp.set_start_method('spawn', force=True)
+
+	# Generate observed dataset x_0
+    if COVERAGE_MODE:
+        x_0 = simulator(phi=phi_0, T=T)
+    else:
+        np.random.seed(0)
+        x_0 = simulator(phi=phi_0, T=T)
     
     # Calculate a CI
     ci = calculate_ci_ncl(signif_level, num_batches, n)
