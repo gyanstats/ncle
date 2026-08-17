@@ -9,7 +9,7 @@ import time
 import pickle
 import sys
 
-COVERAGE_MODE = True
+COVERAGE_MODE = False
 
 # Parameters
 T = int(sys.argv[1]) # Adjust this when necessary
@@ -298,9 +298,9 @@ if __name__ == '__main__':
     # Save results with unique filenames
     if COVERAGE_MODE:
         task_id = int(os.environ.get('SLURM_ARRAY_TASK_ID', '0'))
-        filename = f'analyt_ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
+        filename = f'results_ncle/analyt/ci_T{N_string(T)}_l{batch_len}_task{task_id}.pkl'
     else:
-        filename = f'analyt_ci_T{N_string(T)}_l{batch_len}.pkl'
+        filename = f'results_ncle/analyt/ci_T{N_string(T)}_l{batch_len}.pkl'
         
     with open(filename, 'wb') as f:
         pickle.dump(ci, f)
