@@ -16,6 +16,12 @@ train_multiple = False
 num_sims = int(sys.argv[1]) # Number of training simulations
 batch_len = int(sys.argv[2])
 
+# For pickling at the end of the script
+def N_string(N):
+    if N >= 1_000_000: return f'{N//1_000_000}m'
+    if N >= 1_000:     return f'{N//1_000}k'
+    return str(N)
+
 # Prior over (mu, sigma2_uncond, persistence, alpha_frac)
 class garch11_prior(dist.Distribution):
     def __init__(self):
@@ -109,9 +115,9 @@ if __name__ == '__main__':
     # Save results to a file
     if train_multiple:
         task_id = os.environ.get('SLURM_ARRAY_TASK_ID', '0')
-        filename = f'results_ncle/nle_N{num_sims}/train_l{batch_len}_{task_id}.pkl'
+        filename = f'results_ncle/nle_N{N_string(num_sims)}/train_l{batch_len}_{task_id}.pkl'
     else:
-        filename = f'results_ncle/nle_N{num_sims}/train_l{batch_len}.pkl'
+        filename = f'results_ncle/nle_N{N_string(num_sims)}/train_l{batch_len}.pkl'
         
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'wb') as f:
