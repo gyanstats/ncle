@@ -5,6 +5,12 @@ import sys
 import time
 import torch
 
+# For pickling at the end of the script
+def N_string(N):
+    if N >= 1_000_000: return f'{N//1_000_000}m'
+    if N >= 1_000:     return f'{N//1_000}k'
+    return str(N)
+    
 # Simulator
 def simulator(theta, T, burn_in=500):
     T_total = T + burn_in
@@ -27,7 +33,8 @@ persistence_0 = alpha_0 + beta_0
 alpha_frac_0 = alpha_0 / persistence_0
 
 T = int(sys.argv[1]) # seq length
-l = int(sys.argv[2]) # batch length
+num_sims = int(sys.argv[2])
+l = int(sys.argv[3]) # batch length
 num_batches = T//l
 
 # Observed data
@@ -38,7 +45,7 @@ batches_mat = np.vstack(np.array_split(x_0, num_batches)) # shape: (num_batches,
 
 param_list = ['mu', 'omega', 'alpha', 'beta']
 
-with open(f'train_l{l}_1.pkl', 'rb') as f:
+with open(f'results_ncle/nle_{num_sims}/train_l{l}.pkl', 'rb') as f:
     nle_batches = pickle.load(f)
 likelihood_estimator = nle_batches['likelihood estimator']
     
@@ -86,7 +93,7 @@ for p in param_list:
 times_dict['total'] = time.time() - start
 print(f'Total time: {times_dict["total"]}')
 
-with open(f'log_probs_ncl_l{l}.pkl', 'wb') as f:
+with open(f'results_ncle/nle_{num_sims}/log_probs_T{N_string(T)}_l{l}.pkl', 'wb') as f:
     pickle.dump({'log_probs': log_probs_list_ncl, 'times': times_dict}, f)
                                          
 
