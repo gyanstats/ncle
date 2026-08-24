@@ -46,6 +46,56 @@ def N_string(N):
 n_ = 1000
 phi_seq = np.linspace(-1, 1, n_+2)[1:-1]
 
+def build_maf_reverse(batch_theta, batch_x, hidden_features=50, num_transforms=5,
+                      num_blocks=2, dropout_probability=0.0, use_batch_norm=False):
+    """sbi's build_maf with ReversePermutation in place of RandomPermutation.
+
+    Structure copied from sbi/neural_nets/flow.py:build_maf (sbi 0.22.0); the only change is
+    the permutation class. Imports use pyknos.nflows, which is what sbi itself imports.
+    """
+    from pyknos.nflows import distributions as distributions_
+    from pyknos.nflows import flows, transforms
+    from sbi.utils.sbiutils import (standardizing_net, standardizing_transform,
+                                    z_score_parser)
+    from sbi.utils.user_input_checks import (check_data_device,
+                                             check_embedding_net_device)
+    from torch import nn, tanh
+
+    batch_y = batch_theta
+    embedding_net = nn.Identity()
+    x_numel = batch_x[0].numel()
+    check_data_device(batch_x, batch_y)
+    check_embedding_net_device(embedding_net=embedding_net, datum=batch_y)
+    y_numel = embedding_net(batch_y[:1]).numel()
+
+    transform_list = []
+    for _ in range(num_transforms):
+        transform_list += [
+            transforms.MaskedAffineAutoregressiveTransform(
+                features=x_numel,
+                hidden_features=hidden_features,
+                context_features=y_numel,
+                num_blocks=num_blocks,
+                use_residual_blocks=False,
+                random_mask=False,
+                activation=tanh,
+                dropout_probability=dropout_probability,
+                use_batch_norm=use_batch_norm,
+            ),
+            transforms.ReversePermutation(features=x_numel),  # <-- the fix
+        ]
+
+    z_score_x_bool, structured_x = z_score_parser("independent")
+    if z_score_x_bool:
+        transform_list = [standardizing_transform(batch_x, structured_x)] + transform_list
+
+    z_score_y_bool, structured_y = z_score_parser("independent")
+    if z_score_y_bool:
+        embedding_net = nn.Sequential(standardizing_net(batch_y, structured_y), embedding_net)
+
+    return flows.Flow(transforms.CompositeTransform(transform_list),
+                      distributions_.StandardNormal((x_numel,)), embedding_net)
+
 # Infer phi and calculate log likelihood values for plotting
 def ncle_train(num_batches, batch_len, num_sims):
 
@@ -111,7 +161,7 @@ def ncle_train(num_batches, batch_len, num_sims):
     s = calculate_sufficient_stats(x) # shape: (num_sims, num_stats)
     end_sim_time = time.time()
     
-    inference = SNLE(prior=prior)
+    inference = SNLE(prior=prior, density_estimator=build_maf_reverse)
     likelihood_estimator = inference.append_simulations(phi, s).train() # train NLE
     end_time = time.time()
     
