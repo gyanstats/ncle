@@ -2,12 +2,6 @@
 
 Code to reproduce experiments from the paper: "Neural composite likelihood estimation: simulation based inference for time series".
 
-TODO:
-
-* Add arxiv link when available
-* Describe how to run the code e.g. through bash scripts
-* Describe package dependencies
-
 We have included code for reproducing the two examples - AR(1) and GARCH(1,1) time series models - presented in the paper.
 
 ## Setup
