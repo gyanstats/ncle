@@ -25,6 +25,4 @@ python train_nle.py 10000 10
 ```
 This outputs a pickle file (`.pkl`) in which the results are stored.
 
-The other scripts follow a similar procedure. Note that different scripts accept different arguments, so be sure to check `sys.argv` in the relevant script before running it. 
-
-.....
+The other scripts follow a similar procedure. Note that different scripts accept different arguments, so be sure to check `sys.argv` in the relevant script before running it.
